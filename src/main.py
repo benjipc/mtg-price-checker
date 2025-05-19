@@ -2,7 +2,7 @@ import argparse
 import pandas as pd
 from datetime import datetime
 from api.scryfall import ScryfallAPI
-from api.mtgmate import MTGMateAPI
+from mtgmate.mtgmate import MTGMateAPI
 
 def main():
     parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')
@@ -37,7 +37,7 @@ def main():
             # Search MTGMate
             mtgmate_data = mtgmate.search_card(card_name)
             # print(f"{card_name}:", mtgmate_data)
-            if (mtgmate_data):
+            if isinstance(mtgmate_data, list) and mtgmate_data:
                 # If set code and collector number are provided, find matching card
                 if result['Set'] != 'N/A' and result['Collector Number'] != 'N/A':
                     matching_card = next(
