@@ -1,26 +1,38 @@
 import argparse
 import pandas as pd
 from datetime import datetime
-from api.scryfall import ScryfallAPI
-from mtgmate.mtgmate import MTGMateAPI
+from api.scryfall import ScryfallAPI as sfapi
+from mtgmate.mtgmate import MTGMateAPI as mmapi
+from pathlib import Path
+from card import Card_Spec as cs, Card_Listing as cl
 
-def main():
-    parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')
-    parser.add_argument('-i','--input', help='Input CSV file path')
-    # parser.add_argument('output', required=False, help='Output CSV file path')
-    args = parser.parse_args()
+def main(wishlist_csv_path: Path):
+    assert wishlist_csv_path.exists(), f"Input file {args.input} does not exist."
+    assert wishlist_csv_path.suffix == '.csv', "Input file must be a CSV file."
+    wishlist = pd.read_csv(wishlist_csv_path)
+    assert 'Name' in wishlist.columns
+    assert 'Count' in wishlist.columns
+    wishlist['Count'] = wishlist['Count'].astype(int)
+    # Normalise foil column
+    other_words_for_foil = ['foil', 'yes', 'foiled', 'true', '1']
+    other_words_for_nonfoil = ['non-foil', 'no', 'false', '0', 'nonfoil', '', 'nan']
+    foil_normalisations = {}
+    foil_normalisations.update({old_foil_word: cs.Finish.FOIL for old_foil_word in other_words_for_foil})
+    foil_normalisations.update({old_nonfoil_word: cs.Finish.NON_FOIL for old_nonfoil_word in other_words_for_nonfoil})
+    wishlist['Foil'] = wishlist['Foil'].astype(str).str.lower().replace(foil_normalisations)
+    print (wishlist['Foil'])
+    assert wishlist['Foil'].isin([cs.Finish.FOIL, cs.Finish.NON_FOIL]).all()
 
-    scryfall = ScryfallAPI()
 
-    df = pd.read_csv(args.input)
-    # print(df[['Name', 'Count']].sort_values(by='Name', ascending=True).head(10))
+    vendors = {
+        'MTG Mate' : mmapi,
+        'Hareruya' : None #TODO API
+    }
 
-    # start results list
-    mtgmate = MTGMateAPI()
-    results = []
-    for _, row in df.iterrows():
+    for _, row in wishlist.iterrows():
         card_name = row['Name']
-        card_data = scryfall.search_card(card_name)
+        # Normalise card name
+        card_data = sfapi.search_card(card_name)
         
         if card_data:
             result = {
@@ -35,7 +47,7 @@ def main():
             }
             
             # Search MTGMate
-            mtgmate_data = mtgmate.search_card(card_name)
+            mtgmate_data = mmapi.search_card(card_name)
             # print(f"{card_name}:", mtgmate_data)
             if isinstance(mtgmate_data, list) and mtgmate_data:
                 # If set code and collector number are provided, find matching card
@@ -85,4 +97,14 @@ def main():
     print(f"\nResults exported to: {output_path}")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')
+    parser.add_argument('-i','--input', help='Input CSV file path', default='testfile.csv')
+    # parser.add_argument('output', required=False, help='Output CSV file path')
+    args = parser.parse_args()
+
+    assert args.input, "Input CSV file path is required. Use -i or --input to specify the file."
+
+    input_path = Path(args.input)
+    
+
+    main(wishlist_csv_path=input_path)

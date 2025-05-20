@@ -6,9 +6,13 @@ MTG Price Checker is a Python application that allows users to search for Magic:
 
 ## Features
 
-- Search for card prices using the Scryfall API.
 - Scrape prices from various online stores.
 - Convert prices to Australian Dollars (AUD).
+
+
+## TODO 
+- Add cards to cart for user
+- Add more Australian stores
 
 ## Installation
 
@@ -32,20 +36,6 @@ To run the application, execute the following command:
 python src/main.py
 ```
 
-## Directory Structure
-
-```
-mtg-price-checker
-├── src
-│   ├── main.py
-│   ├── api
-│   ├── gui
-│   ├── scraper
-│   └── utils
-├── tests
-├── requirements.txt
-└── README.md
-```
 
 ## Contributing
 

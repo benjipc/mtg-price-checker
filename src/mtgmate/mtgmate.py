@@ -3,28 +3,7 @@ from bs4 import BeautifulSoup
 import json
 from typing import Optional
 import urllib.parse
-from dataclasses import dataclass
-
-
-@dataclass
-class Card_Spec:
-    name: str
-    edition_code: str
-    card_number: str
-    finish: str
-    language: str = "English"
-
-
-@dataclass
-class Card_Listing:
-    card_spec: Card_Spec
-    store: str
-    price: int
-    price_unit: str
-    currency: str
-    quantity: int
-    description: str
-    link: str
+from card import Card_Spec, Card_Listing
 
 
 class MTGMateAPI:
