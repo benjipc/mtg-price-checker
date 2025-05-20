@@ -10,11 +10,11 @@ def test_listings_from_html():
     assert listings[0].card_spec.name == "Fury"
 
     printings = [
-        ["MH2", 126],
-        ["MH2", 313],
-        ["H2R", 100],
-        ["SPG", 47],
-        ["SPG", 52]
+        ["MH2", "126"],
+        ["MH2", "313"],
+        ["H2R", "10"],
+        ["SPG", "47"],
+        ["SPG", "52"]
     ]
 
     
