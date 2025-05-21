@@ -3,8 +3,7 @@ from bs4 import BeautifulSoup
 import json
 from typing import Optional
 import urllib.parse
-from card import Card_Spec, Card_Listing
-
+from card.card import Card_Spec, Card_Listing
 
 class MTGMateAPI:
     BASE_URL = "https://www.mtgmate.com.au"
@@ -26,7 +25,6 @@ class MTGMateAPI:
         listings = []
 
         soup = BeautifulSoup(response_text, "html.parser")
-
         data_div = soup.find("div", {"data-react-class": "FilterableTable"})
         data_react_props = data_div["data-react-props"]
         props_data = json.loads(data_react_props)
@@ -35,7 +33,7 @@ class MTGMateAPI:
             listing_card_name = card_description.split(" (")[0]
 
             if listing_card_name == search_card_name:  # search_card_spec
-                finish = "Non-Foil" if card_listing["finish"] == "Nonfoil" else "Foil"
+                finish = Card_Spec.Finish.NON_FOIL if card_listing["finish"] == "Nonfoil" else Card_Spec.Finish.FOIL
                 listing_card_spec = Card_Spec(
                     name=listing_card_name,
                     edition_code=card_listing["set_code"].upper(),
@@ -62,7 +60,6 @@ class MTGMateAPI:
         # Encode the card name for the URL
         encoded_name = urllib.parse.quote(card_name)
         search_url = f"{MTGMateAPI.BASE_URL}{MTGMateAPI.SEARCH_SUFFIX}{encoded_name}"
-
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }

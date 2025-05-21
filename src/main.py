@@ -1,10 +1,13 @@
 import argparse
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from api.scryfall import ScryfallAPI as sfapi
 from mtgmate.mtgmate import MTGMateAPI as mmapi
 from pathlib import Path
-from card import Card_Spec as cs, Card_Listing as cl
+from card.card import Card_Spec as cs, Card_Listing as cl
+from dacite import from_dict
+
 
 def main(wishlist_csv_path: Path):
     assert wishlist_csv_path.exists(), f"Input file {args.input} does not exist."
@@ -13,6 +16,12 @@ def main(wishlist_csv_path: Path):
     assert 'Name' in wishlist.columns
     assert 'Count' in wishlist.columns
     wishlist['Count'] = wishlist['Count'].astype(int)
+    wishlist['Edition Code'] = wishlist['Edition Code'].astype(str)
+    wishlist['Edition Code'] = wishlist['Edition Code'].apply(lambda x: x.upper())
+    wishlist['Card Number'] = wishlist['Card Number'].fillna(0).astype('Int64').astype(str).replace('0','')
+    print(wishlist['Card Number'])
+    wishlist = wishlist[['Count','Name','Edition Code','Card Number','Language','Foil']] # skipped 'Condition'
+    wishlist.fillna(value={'Language':'English'}, inplace=True)
     # Normalise foil column
     other_words_for_foil = ['foil', 'yes', 'foiled', 'true', '1']
     other_words_for_nonfoil = ['non-foil', 'no', 'false', '0', 'nonfoil', '', 'nan']
@@ -20,82 +29,46 @@ def main(wishlist_csv_path: Path):
     foil_normalisations.update({old_foil_word: cs.Finish.FOIL for old_foil_word in other_words_for_foil})
     foil_normalisations.update({old_nonfoil_word: cs.Finish.NON_FOIL for old_nonfoil_word in other_words_for_nonfoil})
     wishlist['Foil'] = wishlist['Foil'].astype(str).str.lower().replace(foil_normalisations)
-    print (wishlist['Foil'])
     assert wishlist['Foil'].isin([cs.Finish.FOIL, cs.Finish.NON_FOIL]).all()
 
 
     vendors = {
-        'MTG Mate' : mmapi,
-        'Hareruya' : None #TODO API
+        'MTG Mate' : mmapi
+        # 'Hareruya' : None #TODO API
     }
+    for vendor_name in vendors.keys():
+        wishlist[vendor_name] = None
 
-    for _, row in wishlist.iterrows():
-        card_name = row['Name']
-        # Normalise card name
-        card_data = sfapi.search_card(card_name)
-        
-        if card_data:
-            result = {
-                'Name': card_name,
-                'Count': row['Count'],
-                'Set': row.get('Edition Code', 'N/A'),
-                'Collector Number': row.get('Card Number', 'N/A'),
-                'Foil': row.get('Foil', 'No'),
-                'MTG Mate Price': None,
-                'MTG Mate Quantity': None,
-                'MTG Mate Link': None
-            }
-            
-            # Search MTGMate
-            mtgmate_data = mmapi.search_card(card_name)
-            # print(f"{card_name}:", mtgmate_data)
-            if isinstance(mtgmate_data, list) and mtgmate_data:
-                # If set code and collector number are provided, find matching card
-                if result['Set'] != 'N/A' and result['Collector Number'] != 'N/A':
-                    matching_card = next(
-                        (card for card in mtgmate_data 
-                         if card[2] == result['Set'] and card[3] == result['Collector Number']
-                         and card[6] > 0),  # Check quantity > 0
-                        None
+    for index, row in wishlist.iterrows():
+        for vendor_name, vendor_api in vendors.items():
+            vendor_results = vendor_api.search_card(row['Name'])
+            if vendor_results is not None:
+                # Filter results based on wishlist criteria
+                # print(pd.DataFrame(vendor_results))
+                vendor_results = [
+                    result for result in vendor_results if (
+                        (result.card_spec.edition_code == row['Edition Code'] or row['Edition Code'] == 'NAN') and
+                        (result.card_spec.card_number == row['Card Number'] or row['Card Number'] == '') and
+                        result.card_spec.finish == row['Foil'] and # TODO fix foil check cheapest
+                        result.card_spec.language == row['Language']
                     )
-                    
-                    # If no matching card found, get cheapest with quantity > 0
-                    if not matching_card:
-                        matching_card = min(
-                            (card for card in mtgmate_data if card[6] > 0),
-                            key=lambda x: x[5],
-                            default=None
-                        )
+                ]
+                if vendor_results:
+                    vrdf = pd.DataFrame(vendor_results)
+                    # Sort by price (ascending)
+                    vrdf.sort_values(by='price', ascending=True, inplace=True)
+                    # vrdf.to_dict('records')
+                    # Add the first matching result to the wishlist
+                    vendor_results = vrdf.to_dict('records')[0]
+                    vendor_results = from_dict(data_class=cl, data=vendor_results)
                 else:
-                    # Get cheapest available card
-                    matching_card = min(
-                        (card for card in mtgmate_data if card[6] > 0),
-                        key=lambda x: x[5],
-                        default=None
-                    )
-                
-                if matching_card:
-                    result['MTG Mate Quantity'] = matching_card[6]
-                    result['MTG Mate Price'] = matching_card[5]
-                    result['MTG Mate Link'] = matching_card[7]
+                    vendor_results = None
+            wishlist[vendor_name].iat[index] = vendor_results
             
-            results.append(result)
-        else:
-            print(f"Could not find data for card: {card_name}")
-    df_results = pd.DataFrame(results)
-    
-    # Display results
-    print("\nResults:")
-    print(df_results[['Name', 'Count', 'Set', 'Collector Number', 'MTG Mate Price', 'MTG Mate Quantity', 'MTG Mate Link']])
-    
-    # Generate filename with date and time
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_path = f'output_{timestamp}.csv'
-    
-    # Export to CSV
-    df_results.to_csv(output_path, index=False)
-    print(f"\nResults exported to: {output_path}")
+            
 
+    print(wishlist.iloc[1]['MTG Mate'])
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')
     parser.add_argument('-i','--input', help='Input CSV file path', default='testfile.csv')
