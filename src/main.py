@@ -8,7 +8,6 @@ from pathlib import Path
 from card.card import Card_Spec as cs, Card_Listing as cl
 from dacite import from_dict
 
-
 def main(wishlist_csv_path: Path):
     assert wishlist_csv_path.exists(), f"Input file {args.input} does not exist."
     assert wishlist_csv_path.suffix == '.csv', "Input file must be a CSV file."
@@ -31,43 +30,53 @@ def main(wishlist_csv_path: Path):
     wishlist['Foil'] = wishlist['Foil'].astype(str).str.lower().replace(foil_normalisations)
     assert wishlist['Foil'].isin([cs.Finish.FOIL, cs.Finish.NON_FOIL]).all()
 
-
     vendors = {
-        'MTG Mate' : mmapi
+        'MTG Mate' : mmapi,
+        # 'MTG Mate 2' : mmapi
         # 'Hareruya' : None #TODO API
     }
-    for vendor_name in vendors.keys():
-        wishlist[vendor_name] = None
+    # for vendor_name in vendors.keys():
+    #     wishlist[vendor_name] = None
+
+    wishlist['Results'] = None
+
 
     for index, row in wishlist.iterrows():
+        vrdf_all = pd.DataFrame()
         for vendor_name, vendor_api in vendors.items():
             vendor_results = vendor_api.search_card(row['Name'])
             if vendor_results is not None:
-                # Filter results based on wishlist criteria
-                # print(pd.DataFrame(vendor_results))
-                vendor_results = [
-                    result for result in vendor_results if (
-                        (result.card_spec.edition_code == row['Edition Code'] or row['Edition Code'] == 'NAN') and
-                        (result.card_spec.card_number == row['Card Number'] or row['Card Number'] == '') and
-                        result.card_spec.finish == row['Foil'] and # TODO fix foil check cheapest
-                        result.card_spec.language == row['Language']
-                    )
-                ]
-                if vendor_results:
-                    vrdf = pd.DataFrame(vendor_results)
-                    # Sort by price (ascending)
-                    vrdf.sort_values(by='price', ascending=True, inplace=True)
-                    # vrdf.to_dict('records')
-                    # Add the first matching result to the wishlist
-                    vendor_results = vrdf.to_dict('records')[0]
-                    vendor_results = from_dict(data_class=cl, data=vendor_results)
-                else:
-                    vendor_results = None
-            wishlist[vendor_name].iat[index] = vendor_results
-            
-            
+                vrdf = pd.DataFrame(vendor_results)
+                vrdf_all = pd.concat([vrdf_all, vrdf], ignore_index=True)
 
-    print(wishlist.iloc[1]['MTG Mate'])
+        wishlist['Results'].iat[index] = vrdf_all
+
+            # if vendor_results is not None:
+            #     # Filter results based on wishlist criteria
+            #     # print(pd.DataFrame(vendor_results))
+            #     vendor_results = [
+            #         result for result in vendor_results if (
+            #             (result.card_spec.edition_code == row['Edition Code'] or row['Edition Code'] == 'NAN') and
+            #             (result.card_spec.card_number == row['Card Number'] or row['Card Number'] == '') and
+            #             result.card_spec.finish == row['Foil'] and # TODO fix foil check cheapest
+            #             result.card_spec.language == row['Language']
+            #         )
+            #     ]
+            #     if vendor_results:
+            #         vrdf = pd.DataFrame(vendor_results)
+            #         # Sort by price (ascending)
+            #         vrdf.sort_values(by='price', ascending=True, inplace=True)
+            #         # vrdf.to_dict('records')
+            #         # Add the first matching result to the wishlist
+            #         vendor_results = vrdf.to_dict('records')[0]
+            #         vendor_results = from_dict(data_class=cl, data=vendor_results)
+            #     else:
+            #         vendor_results = None
+            # wishlist[vendor_name].iat[index] = vendor_results
+
+    # print(wishlist.iloc[1]['MTG Mate'])
+    # print(wishlist.head())
+    print(wishlist['Results'][1])
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')
