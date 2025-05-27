@@ -1,14 +1,10 @@
 import argparse
 import pandas as pd
-import numpy as np
-from typing import Dict
-from datetime import datetime
 from vendor_api.vendor_api import VendorAPI
-from api.scryfall import ScryfallAPI as sfapi
-from mtgmate.mtgmate import MTGMateAPI as mmapi
+from src.vendor_api.mtgmate import MTGMateAPI as mmapi
+from src.vendor_api.hareruya import HareruyaAPI as hrapi
 from pathlib import Path
-from card.card import Card_Spec as cs, Card_Listing as cl, filter_listings
-from dacite import from_dict
+from card.card import Card_Spec as cs, filter_listings
 
 def main(wishlist_csv_path: Path):
     assert wishlist_csv_path.exists(), f"Input file {args.input} does not exist."
@@ -39,7 +35,7 @@ def main(wishlist_csv_path: Path):
     vendors:dict[str, type[VendorAPI]] = {
         'MTG Mate' : mmapi,
         # 'MTG Mate 2' : mmapi
-        # 'Hareruya' : None #TODO API
+        'Hareruya' : hrapi
     }
 
     wishlist['Card Spec'] = [
