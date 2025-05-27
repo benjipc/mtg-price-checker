@@ -1,7 +1,9 @@
 import argparse
 import pandas as pd
 import numpy as np
+from typing import Dict
 from datetime import datetime
+from vendor_api.vendor_api import VendorAPI
 from api.scryfall import ScryfallAPI as sfapi
 from mtgmate.mtgmate import MTGMateAPI as mmapi
 from pathlib import Path
@@ -34,7 +36,7 @@ def main(wishlist_csv_path: Path):
 
     # print(wishlist.head())
 
-    vendors = {
+    vendors:dict[str, type[VendorAPI]] = {
         'MTG Mate' : mmapi,
         # 'MTG Mate 2' : mmapi
         # 'Hareruya' : None #TODO API
@@ -70,7 +72,7 @@ def main(wishlist_csv_path: Path):
 
         wishlist['Results'].iat[index] = vrdf_all.sort_values(by='price', ascending=True).reset_index(drop=True)
 
-    print(wishlist['Results'][1][['store','description','finish','price']])
+    print(wishlist['Results'][2][['store','description','finish','price']])
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')

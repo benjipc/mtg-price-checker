@@ -5,7 +5,7 @@ def test_listings_from_html():
         response_text = file.read()
     
     card_name = "Fury"
-    listings = MTGMateAPI.listings_from_html(response_text=response_text, search_card_name=card_name)
+    listings = MTGMateAPI._listings_from_html(response_text=response_text, search_card_name=card_name)
     assert len(listings) == 9
     assert listings[0].card_spec.name == "Fury"
 
@@ -32,7 +32,7 @@ def test_listings_from_html():
 
 
     card_name = "Brainstorm"
-    listings = MTGMateAPI.listings_from_html(response_text=response_text, search_card_name=card_name)
+    listings = MTGMateAPI._listings_from_html(response_text=response_text, search_card_name=card_name)
     assert len(listings) == 0
 
     
