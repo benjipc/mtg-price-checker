@@ -11,8 +11,10 @@ MTG Price Checker is a Python application that allows users to search for Magic:
 
 
 ## TODO 
+- add enforce non-foil as cli option
 - Add cards to cart for user
 - Add more Australian stores
+- When GUI added, after show an editable table before initiating search
 
 ## Installation
 

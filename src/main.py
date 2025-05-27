@@ -5,7 +5,7 @@ from datetime import datetime
 from api.scryfall import ScryfallAPI as sfapi
 from mtgmate.mtgmate import MTGMateAPI as mmapi
 from pathlib import Path
-from card.card import Card_Spec as cs, Card_Listing as cl
+from card.card import Card_Spec as cs, Card_Listing as cl, filter_listings
 from dacite import from_dict
 
 def main(wishlist_csv_path: Path):
@@ -18,25 +18,38 @@ def main(wishlist_csv_path: Path):
     wishlist['Edition Code'] = wishlist['Edition Code'].astype(str)
     wishlist['Edition Code'] = wishlist['Edition Code'].apply(lambda x: x.upper())
     wishlist['Card Number'] = wishlist['Card Number'].fillna(0).astype('Int64').astype(str).replace('0','')
-    print(wishlist['Card Number'])
+    # print(wishlist['Card Number'])
     wishlist = wishlist[['Count','Name','Edition Code','Card Number','Language','Foil']] # skipped 'Condition'
     wishlist.fillna(value={'Language':'English'}, inplace=True)
     # Normalise foil column
     other_words_for_foil = ['foil', 'yes', 'foiled', 'true', '1']
-    other_words_for_nonfoil = ['non-foil', 'no', 'false', '0', 'nonfoil', '', 'nan']
+    other_words_for_nonfoil = ['non-foil', 'no', 'false', '0', 'nonfoil']
+    other_words_for_unspecified = ['', 'nan', 'unspecified', 'unknown', 'any', 'either', 'both']
     foil_normalisations = {}
     foil_normalisations.update({old_foil_word: cs.Finish.FOIL for old_foil_word in other_words_for_foil})
     foil_normalisations.update({old_nonfoil_word: cs.Finish.NON_FOIL for old_nonfoil_word in other_words_for_nonfoil})
+    foil_normalisations.update({old_unspecified_word: cs.Finish.UNSPECIFIED for old_unspecified_word in other_words_for_unspecified})
     wishlist['Foil'] = wishlist['Foil'].astype(str).str.lower().replace(foil_normalisations)
-    assert wishlist['Foil'].isin([cs.Finish.FOIL, cs.Finish.NON_FOIL]).all()
+    assert wishlist['Foil'].isin([v for v in cs.Finish]).all()
+
+    # print(wishlist.head())
 
     vendors = {
         'MTG Mate' : mmapi,
         # 'MTG Mate 2' : mmapi
         # 'Hareruya' : None #TODO API
     }
-    # for vendor_name in vendors.keys():
-    #     wishlist[vendor_name] = None
+
+    wishlist['Card Spec'] = [
+        cs(
+            name=row['Name'],
+            edition_code=row['Edition Code'],
+            card_number=row['Card Number'],
+            finish=row['Foil'],
+            language=row['Language']
+        )
+        for _, row in wishlist.iterrows()
+    ]
 
     wishlist['Results'] = None
 
@@ -44,39 +57,20 @@ def main(wishlist_csv_path: Path):
     for index, row in wishlist.iterrows():
         vrdf_all = pd.DataFrame()
         for vendor_name, vendor_api in vendors.items():
-            vendor_results = vendor_api.search_card(row['Name'])
+            vendor_results = vendor_api.search_card(row['Name']) #TODO add async
             if vendor_results is not None:
-                vrdf = pd.DataFrame(vendor_results)
+                vrdf = pd.concat([result.to_dataframe() for result in vendor_results], ignore_index=True)
                 vrdf_all = pd.concat([vrdf_all, vrdf], ignore_index=True)
+        # if not vrdf_all.empty:
+        assert vrdf_all.empty == False, f"No results found for {row['Name']} ({row['Edition Code']} {row['Card Number']})"
+        vrdf_all = filter_listings(vrdf_all, row['Card Spec'])
 
-        wishlist['Results'].iat[index] = vrdf_all
 
-            # if vendor_results is not None:
-            #     # Filter results based on wishlist criteria
-            #     # print(pd.DataFrame(vendor_results))
-            #     vendor_results = [
-            #         result for result in vendor_results if (
-            #             (result.card_spec.edition_code == row['Edition Code'] or row['Edition Code'] == 'NAN') and
-            #             (result.card_spec.card_number == row['Card Number'] or row['Card Number'] == '') and
-            #             result.card_spec.finish == row['Foil'] and # TODO fix foil check cheapest
-            #             result.card_spec.language == row['Language']
-            #         )
-            #     ]
-            #     if vendor_results:
-            #         vrdf = pd.DataFrame(vendor_results)
-            #         # Sort by price (ascending)
-            #         vrdf.sort_values(by='price', ascending=True, inplace=True)
-            #         # vrdf.to_dict('records')
-            #         # Add the first matching result to the wishlist
-            #         vendor_results = vrdf.to_dict('records')[0]
-            #         vendor_results = from_dict(data_class=cl, data=vendor_results)
-            #     else:
-            #         vendor_results = None
-            # wishlist[vendor_name].iat[index] = vendor_results
 
-    # print(wishlist.iloc[1]['MTG Mate'])
-    # print(wishlist.head())
-    print(wishlist['Results'][1])
+
+        wishlist['Results'].iat[index] = vrdf_all.sort_values(by='price', ascending=True).reset_index(drop=True)
+
+    print(wishlist['Results'][1][['store','description','finish','price']])
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')

@@ -21,7 +21,6 @@ class MTGMateAPI:
     def listings_from_html(
         response_text: str, search_card_name: str
     ) -> Optional[list[Card_Listing]]:
-        # def listings_from_html(response_text: str, search_card_spec: Card_Spec) -> Optional[list[Card_Listing]]:
         listings = []
 
         soup = BeautifulSoup(response_text, "html.parser")
@@ -56,7 +55,7 @@ class MTGMateAPI:
         return listings
 
     @staticmethod
-    def search_card(card_name: str) -> Optional[list[Card_Listing]]:
+    def search_card(card_name: str) -> Optional[list[Card_Listing]]:#TODO think about where it needs to be async
         # Encode the card name for the URL
         encoded_name = urllib.parse.quote(card_name)
         search_url = f"{MTGMateAPI.BASE_URL}{MTGMateAPI.SEARCH_SUFFIX}{encoded_name}"
@@ -64,11 +63,8 @@ class MTGMateAPI:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
 
-        try:
+        try: 
             response_text = MTGMateAPI.get_html(search_url=search_url, headers=headers)
-            # Save the HTML response to a file for debugging
-            # with open(f'mtgmate_{encoded_name}.html', 'w', encoding='utf-8') as file:
-            #     file.write(response_text)
             listings = MTGMateAPI.listings_from_html(
                 response_text=response_text, search_card_name=card_name
             )
