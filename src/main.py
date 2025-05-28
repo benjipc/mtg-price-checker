@@ -48,7 +48,7 @@ def main(wishlist_csv_path: Path):
         )
         for _, row in wishlist.iterrows()
     ]
-
+    # print(wishlist['Card Spec'][0])
     wishlist['Results'] = None
 
 
@@ -60,15 +60,16 @@ def main(wishlist_csv_path: Path):
                 vrdf = pd.concat([result.to_dataframe() for result in vendor_results], ignore_index=True)
                 vrdf_all = pd.concat([vrdf_all, vrdf], ignore_index=True)
         # if not vrdf_all.empty:
+        # print(vrdf_all[['language', 'description']])
         assert vrdf_all.empty == False, f"No results found for {row['Name']} ({row['Edition Code']} {row['Card Number']})"
         vrdf_all = filter_listings(vrdf_all, row['Card Spec'])
-
+    
 
 
 
         wishlist['Results'].iat[index] = vrdf_all.sort_values(by='price', ascending=True).reset_index(drop=True)
 
-    print(wishlist['Results'][1][['store','description','finish','price']])
+    print(wishlist['Results'][0][['store','description','finish','price','currency','language','card_number','edition_code']])
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')

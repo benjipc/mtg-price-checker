@@ -47,10 +47,11 @@ class Card_Listing:
 
 
 
-def filter_listings(listings: pd.DataFrame, card_spec: Card_Spec) -> pd.DataFrame:
+def filter_listings(listings: pd.DataFrame, card_spec: Card_Spec) -> pd.DataFrame: #TODO filter for quantity
     """
     Filters the listings DataFrame based on the provided Card_Spec.
     """
+    sets_without_card_numbers = ['LEA', 'LEB', '2ED', '3ED', '4ED', '5ED', 'ARN', 'ATQ', 'LEG', 'DRK', 'FEM', 'ICE', 'HML', 'ALL', 'MIR', 'VIS', 'WTH', 'TMP', 'STH']
     filtered_listings = listings.copy()
     if card_spec.name:
         filtered_listings = filtered_listings[filtered_listings['name'].str.lower() == card_spec.name.lower()]
@@ -58,7 +59,7 @@ def filter_listings(listings: pd.DataFrame, card_spec: Card_Spec) -> pd.DataFram
     if card_spec.edition_code and card_spec.edition_code != "NAN":
         filtered_listings = filtered_listings[filtered_listings['edition_code'].str.lower() == card_spec.edition_code.lower()]
 
-    if card_spec.card_number:
+    if card_spec.card_number and not card_spec.edition_code in sets_without_card_numbers:
         filtered_listings = filtered_listings[filtered_listings['card_number'].str.lower() == card_spec.card_number.lower()]
 
     if card_spec.finish and card_spec.finish != Card_Spec.Finish.UNSPECIFIED:
