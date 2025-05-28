@@ -1,4 +1,4 @@
-from src.vendor_api.mtgmate import MTGMateAPI
+from vendor_api.mtgmate import MTGMateAPI
 
 card_name = "Fury"
 listings = MTGMateAPI.search_card(card_name)

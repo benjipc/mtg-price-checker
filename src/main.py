@@ -1,8 +1,8 @@
 import argparse
 import pandas as pd
 from vendor_api.vendor_api import VendorAPI
-from src.vendor_api.mtgmate import MTGMateAPI as mmapi
-from src.vendor_api.hareruya import HareruyaAPI as hrapi
+from vendor_api.mtgmate import MTGMateAPI as mmapi
+from vendor_api.hareruya import HareruyaAPI as hrapi
 from pathlib import Path
 from card.card import Card_Spec as cs, filter_listings
 
@@ -68,7 +68,7 @@ def main(wishlist_csv_path: Path):
 
         wishlist['Results'].iat[index] = vrdf_all.sort_values(by='price', ascending=True).reset_index(drop=True)
 
-    print(wishlist['Results'][2][['store','description','finish','price']])
+    print(wishlist['Results'][1][['store','description','finish','price']])
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process MTG card CSV files and add prices')
