@@ -46,7 +46,7 @@ class MTGMateAPI(VendorAPI):
                     store="MTG Mate",
                     price=int(card_listing["price"]),
                     currency="AUD",
-                    price_unit="cents",
+                    price_unit="AUCents",
                     quantity=card_listing["quantity"],
                     description=card_description,
                     link=MTGMateAPI.BASE_URL + card_listing["link_path"],

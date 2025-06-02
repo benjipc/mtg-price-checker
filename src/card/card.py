@@ -22,7 +22,7 @@ class Card_Spec:
 class Card_Listing:
     card_spec: Card_Spec
     store: str
-    price: int
+    price: float
     price_unit: str
     currency: str
     quantity: int
