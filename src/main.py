@@ -3,6 +3,8 @@ import pandas as pd
 from vendor_api.vendor_api import VendorAPI
 from vendor_api.mtgmate import MTGMateAPI as mmapi
 from vendor_api.hareruya import HareruyaAPI as hrapi
+from vendor_api.pgs import PGSAPI as pgsapi
+from vendor_api.gamesdistrict import gamesdistrictAPI as gdaapi
 from pathlib import Path
 from card.card import Card_Spec as cs, filter_listings
 
@@ -34,7 +36,8 @@ def main(wishlist_csv_path: Path):
 
     vendors:dict[str, type[VendorAPI]] = {
         'MTG Mate' : mmapi,
-        # 'MTG Mate 2' : mmapi
+        'PGS' : pgsapi,
+        'Games District' : gdaapi,
         'Hareruya' : hrapi
     }
 
@@ -55,18 +58,22 @@ def main(wishlist_csv_path: Path):
     for index, row in wishlist.iterrows():
         vrdf_all = pd.DataFrame()
         for vendor_name, vendor_api in vendors.items():
-            vendor_results = vendor_api.search_card(row['Name']) #TODO add async
-            if vendor_results is not None:
-                vrdf = pd.concat([result.to_dataframe() for result in vendor_results], ignore_index=True)
-                vrdf_all = pd.concat([vrdf_all, vrdf], ignore_index=True)
-        # if not vrdf_all.empty:
-        # print(vrdf_all[['language', 'description']])
-        assert vrdf_all.empty == False, f"No results found for {row['Name']} ({row['Edition Code']} {row['Card Number']})"
+            vendor_results = vendor_api.search_card(row['Name'])
+            if vendor_results and len(vendor_results) > 0:  # Check if results exist and not empty
+                try:
+                    vrdf = pd.concat([result.to_dataframe() for result in vendor_results], ignore_index=True)
+                    vrdf_all = pd.concat([vrdf_all, vrdf], ignore_index=True)
+                except ValueError as e:
+                    print(f"Warning: No valid results from {vendor_name} for {row['Name']}")
+                    continue
+            else:
+                print(f"No results from {vendor_name} for {row['Name']}")
+
+        if vrdf_all.empty:
+            print(f"Warning: No results found for {row['Name']} ({row['Edition Code']} {row['Card Number']})")
+            continue  # Skip to next card if no results found
+        
         vrdf_all = filter_listings(vrdf_all, row['Card Spec'])
-    
-
-
-
         wishlist['Results'].iat[index] = vrdf_all.sort_values(by='price', ascending=True).reset_index(drop=True)
 
     print(wishlist['Results'][0][['store','description','finish','price','currency','language','card_number','edition_code']])
