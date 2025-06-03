@@ -4,6 +4,7 @@ from vendor_api.mtgmate import MTGMateAPI as mmapi
 from vendor_api.hareruya import HareruyaAPI as hrapi
 from vendor_api.pgs import PGSAPI as pgsapi
 from vendor_api.gamesdistrict import gamesdistrictAPI as gdaapi
+from vendor_api.cardkingdom import CardKingdomAPI as ckapi
 from pathlib import Path
 from card.card import Card_Spec as cs, filter_listings
 import requests
@@ -15,7 +16,8 @@ class WishlistProcessor:
             'MTG Mate': mmapi,
             'PGS': pgsapi,
             'Games District': gdaapi,
-            'Hareruya': hrapi
+            'Hareruya': hrapi,
+            'Card Kingdom': ckapi
         }
         # Replace CurrencyRates with our own exchange rate handling
         self.exchange_rates = {}
@@ -105,14 +107,10 @@ class WishlistProcessor:
             self.exchange_rates = self.fallback_rates.copy()
 
     def _normalize_price(self, price: float, currency: str, price_unit: str) -> float:
-        # Update rates if needed
         self._update_exchange_rates()
 
         try:
-            # Convert string price to float
             price = float(price)
-
-            # Convert to AUD based on currency
             if currency == 'JPY':
                 price = price * self.exchange_rates['JPY']
             elif currency == 'USD':
@@ -155,6 +153,7 @@ class WishlistProcessor:
                 continue
 
             vrdf_all = filter_listings(vrdf_all, row['Card Spec'])
+            vrdf_all = vrdf_all[vrdf_all['quantity'] > 0]
             wishlist['Results'].iat[index] = vrdf_all.sort_values(by='price', ascending=True).reset_index(drop=True)
         
         return wishlist

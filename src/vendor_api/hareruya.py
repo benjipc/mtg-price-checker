@@ -115,8 +115,9 @@ class HareruyaAPI(VendorAPI):
 
     @staticmethod
     def search_card(card_name: str) -> Optional[List[Card_Listing]]:
-        # Encode the card name for the URL
-        encoded_name = urllib.parse.quote(card_name)
+        # Check if card name has a split part " /" and only keep the first part
+        clean_name = card_name.split(" /")[0] if " /" in card_name else card_name
+        encoded_name = urllib.parse.quote(clean_name)
         search_url = f"{HareruyaAPI.BASE_URL}{HareruyaAPI.SEARCH_SUFFIX}{encoded_name}"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
