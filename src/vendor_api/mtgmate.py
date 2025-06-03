@@ -44,7 +44,7 @@ class MTGMateAPI(VendorAPI):
                 card_listing = Card_Listing(
                     card_spec=listing_card_spec,
                     store="MTG Mate",
-                    price=int(card_listing["price"]),
+                    price=float(card_listing["price"]),
                     currency="AUD",
                     price_unit="AUCents",
                     quantity=card_listing["quantity"],

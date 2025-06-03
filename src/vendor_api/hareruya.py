@@ -86,7 +86,7 @@ class HareruyaAPI(VendorAPI):
                                 price_element = row.select_one("div.col-xs-3")
                                 quantity_element = row.find_all("div", {"class": "col-xs-2"})[1]
                                 price_text = price_element.text.strip().split()[0]
-                                price = int(price_text.replace(',', ''))
+                                price = float(price_text.replace(',', ''))
                                 quantity = int(quantity_element.text.strip())
                                 language = 'Japanese' if lang == 'JP' else 'English'
 

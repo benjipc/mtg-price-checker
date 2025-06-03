@@ -41,7 +41,7 @@ class gamesdistrictAPI(VendorAPI):
                 card_listing = Card_Listing(
                     card_spec=listing_card_spec,
                     store="Games District",
-                    price=int(card_listing['price']),
+                    price=float(card_listing['price']),
                     currency="AUD",
                     price_unit="AUD",
                     quantity=card_listing['quantity'],
