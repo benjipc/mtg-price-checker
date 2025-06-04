@@ -10,10 +10,12 @@ from card.card import Card_Spec as cs, filter_listings
 import requests
 from datetime import datetime, timedelta
 
+from typing import Dict, List, Optional
+from tqdm import tqdm
 class WishlistProcessor:
     def __init__(self):
-        self.vendors = {
-            # 'MTG Mate': mmapi,
+        self.vendors: Dict[str, VendorAPI] = {
+            'MTG Mate': mmapi,
             # 'PGS': pgsapi,
             # 'Games District': gdaapi,
             # 'Hareruya': hrapi,
@@ -125,7 +127,7 @@ class WishlistProcessor:
             return price
 
     def _process_card_listings(self, wishlist: pd.DataFrame) -> pd.DataFrame:
-        for index, row in wishlist.iterrows():
+        for index, row in tqdm(wishlist.iterrows(), total=wishlist.shape[0]):
             vrdf_all = pd.DataFrame()
             for vendor_name, vendor_api in self.vendors.items():
                 vendor_results = vendor_api.search_card(row['Name'])
@@ -146,7 +148,9 @@ class WishlistProcessor:
                         print(f"Warning: No valid results from {vendor_name} for {row['Name']}")
                         continue
                 else:
-                    print(f"No results from {vendor_name} for {row['Name']}")
+                    # print(f"No results from {vendor_name} for {row['Name']}")
+                    tqdm.write(f"No results from {vendor_name} for {row['Name']}")
+                    
 
             if vrdf_all.empty:
                 print(f"Warning: No results found for {row['Name']} ({row['Edition Code']} {row['Card Number']})")
