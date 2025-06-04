@@ -13,10 +13,10 @@ from datetime import datetime, timedelta
 class WishlistProcessor:
     def __init__(self):
         self.vendors = {
-            'MTG Mate': mmapi,
-            'PGS': pgsapi,
-            'Games District': gdaapi,
-            'Hareruya': hrapi,
+            # 'MTG Mate': mmapi,
+            # 'PGS': pgsapi,
+            # 'Games District': gdaapi,
+            # 'Hareruya': hrapi,
             'Card Kingdom': ckapi
         }
         # Replace CurrencyRates with our own exchange rate handling
