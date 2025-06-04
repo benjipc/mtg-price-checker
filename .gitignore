@@ -24,21 +24,19 @@ wheels/
 # Virtual Environment
 venv/
 ENV/
+pyvenv.cfg
+Scripts*
 
 # IDE
 .idea/
 .vscode/
 
 # Project specific
-output_*.csv  # This will ignore your generated output files
+# wishlists, exports etc.
+*.csv
 
 # Pytest cache
 .pytest_cache/
-
-# CSV files (test data and output files)
-testoutfile*.csv
-testoutfile.csv
-testfile*.csv
 
 # HTML files (appear to be test or documentation files)
 *.html
