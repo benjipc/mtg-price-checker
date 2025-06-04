@@ -26,7 +26,11 @@ MTG Price Checker is a Python application that allows users to search for Magic:
    ```
    cd mtg-price-checker
    ```
-3. Install the required dependencies:
+3. Make the venv:
+   ```
+   
+   ```
+4. Install the required dependencies:
    ```
    pip install -r requirements.txt
    ```
