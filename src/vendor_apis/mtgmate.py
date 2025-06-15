@@ -3,8 +3,8 @@ from bs4 import BeautifulSoup
 import json
 from typing import Optional, List
 import urllib.parse
-from card.card import Card_Spec, Card_Listing
-from vendor_api.vendor_api import VendorAPI
+from card import CardSpec, VendorListing
+from vendor_api import VendorAPI, VendorListingsT
 
 class MTGMateAPI(VendorAPI):
     BASE_URL = "https://www.mtgmate.com.au"
@@ -21,7 +21,7 @@ class MTGMateAPI(VendorAPI):
     @staticmethod
     def _listings_from_html(
         response_text: str, search_card_name: str
-    ) -> Optional[list[Card_Listing]]:
+    ) -> VendorListingsT:
         listings = []
 
         soup = BeautifulSoup(response_text, "html.parser")
@@ -33,15 +33,15 @@ class MTGMateAPI(VendorAPI):
             listing_card_name = card_description.split(" (")[0]
 
             if listing_card_name == search_card_name:  # search_card_spec
-                finish = Card_Spec.Finish.NON_FOIL if card_listing["finish"] == "Nonfoil" else Card_Spec.Finish.FOIL
-                listing_card_spec = Card_Spec(
+                finish = CardSpec.Finish.NON_FOIL if card_listing["finish"] == "Nonfoil" else CardSpec.Finish.FOIL
+                listing_card_spec = CardSpec(
                     name=listing_card_name,
                     edition_code=card_listing["set_code"].upper(),
                     card_number=card_listing["link_path"].split("/")[-1].split(":")[0],
                     finish=finish,
                     language="English",
                 )
-                card_listing = Card_Listing(
+                card_listing = VendorListing(
                     card_spec=listing_card_spec,
                     store="MTG Mate",
                     price=float(card_listing["price"]),
@@ -56,7 +56,7 @@ class MTGMateAPI(VendorAPI):
         return listings
 
     @staticmethod
-    def search_card(card_name: str) -> Optional[List[Card_Listing]]:#TODO think about where it needs to be async
+    def search_card_name(card_name: str) -> VendorListingsT:#TODO think about where it needs to be async
         # Encode the card name for the URL
         encoded_name = urllib.parse.quote(card_name)
         search_url = f"{MTGMateAPI.BASE_URL}{MTGMateAPI.SEARCH_SUFFIX}{encoded_name}"
@@ -73,12 +73,12 @@ class MTGMateAPI(VendorAPI):
             return listings
 
         except (requests.RequestException, json.JSONDecodeError, ValueError) as e:
-            print(f"Error searching MTGMate for card {card_name}: {e}")
+            # print(f"Error searching MTGMate for card {card_name}: {e}")
             return None
 
 
 if __name__ == "__main__":
     # Example usage
     card_name = "Fury"
-    listings = MTGMateAPI.search_card(card_name)
+    listings = MTGMateAPI.search_card_name(card_name)
     print(listings)

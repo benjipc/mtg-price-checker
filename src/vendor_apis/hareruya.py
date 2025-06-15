@@ -3,10 +3,9 @@ import re
 from bs4 import BeautifulSoup
 import json
 from typing import Optional, List
-import pandas as pd
 import urllib.parse
-from card.card import Card_Spec, Card_Listing
-from vendor_api.vendor_api import VendorAPI
+from card import CardSpec, VendorListing
+from vendor_api import VendorAPI
 
 class HareruyaAPI(VendorAPI):
     BASE_URL = "https://www.hareruyamtg.com/en"
@@ -38,7 +37,7 @@ class HareruyaAPI(VendorAPI):
     def _listings_from_html(
         hr_product_ids: List[str],
         search_name: str  # Add search_name parameter
-    ) -> Optional[List[Card_Listing]]:
+    ) -> Optional[List[VendorListing]]:
         sell_info_divs = []
         
         for ids in list(set(hr_product_ids)):
@@ -70,7 +69,7 @@ class HareruyaAPI(VendorAPI):
                 if card_name == search_name.lower():
                     edition_code = edition_code_match.group(1) if edition_code_match else None
                     # card_number = card_number_match.group(1) if card_number_match else None
-                    finish = Card_Spec.Finish.FOIL if (foiling_match and foiling_match.group(1) == "Foil") else Card_Spec.Finish.NON_FOIL
+                    finish = CardSpec.Finish.FOIL if (foiling_match and foiling_match.group(1) == "Foil") else CardSpec.Finish.NON_FOIL
             
                     for lang in ["JP", "EN"]:
                         price_table = sell_info.find("div", {"id": f"priceTable-{lang}"})
@@ -90,7 +89,7 @@ class HareruyaAPI(VendorAPI):
                                 quantity = int(quantity_element.text.strip())
                                 language = 'Japanese' if lang == 'JP' else 'English'
 
-                                card_spec = Card_Spec(
+                                card_spec = CardSpec(
                                     name=card_name,
                                     edition_code=edition_code,
                                     card_number=str(sku),
@@ -98,7 +97,7 @@ class HareruyaAPI(VendorAPI):
                                     language=language
                                 )
 
-                                listing = Card_Listing(
+                                listing = VendorListing(
                                     card_spec=card_spec,
                                     store="Hareruya",
                                     price=price,
@@ -114,7 +113,7 @@ class HareruyaAPI(VendorAPI):
         return listings
 
     @staticmethod
-    def search_card(card_name: str) -> Optional[List[Card_Listing]]:
+    def search_card_name(card_name: str) -> Optional[List[VendorListing]]:
         # Check if card name has a split part " /" and only keep the first part
         clean_name = card_name.split(" /")[0] if " /" in card_name else card_name
         encoded_name = urllib.parse.quote(clean_name)
@@ -138,7 +137,7 @@ class HareruyaAPI(VendorAPI):
 if __name__ == "__main__":
     # Example usage
     card_name = "Ghost Vacuum"
-    hareruya_data = HareruyaAPI.search_card(card_name)
+    hareruya_data = HareruyaAPI.search_card_name(card_name)
     if hareruya_data:
         print("There is data")
     else:

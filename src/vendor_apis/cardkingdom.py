@@ -3,8 +3,8 @@ from bs4 import BeautifulSoup
 import json
 from typing import Optional, List
 import urllib.parse
-from card.card import Card_Spec, Card_Listing
-from vendor_api.vendor_api import VendorAPI
+from card import CardSpec, VendorListing
+from vendor_api import VendorAPI
 
 class CardKingdomAPI(VendorAPI):
     BASE_URL = "https://www.cardkingdom.com/"
@@ -49,21 +49,20 @@ class CardKingdomAPI(VendorAPI):
 
         response.append(requests.get('https://www.cardkingdom.com/catalog/search', params=params, cookies=cookies, headers=headers))
         response.append(requests.get('https://www.cardkingdom.com/catalog/search?filter[tab]=mtg_foil', params=params, cookies=cookies, headers=headers))
-        # print(response.text)
         return '\n'.join(r.text for r in response)
     
 
     @staticmethod
     def _listings_from_html(
         response_text: str, search_card_name: str
-    ) -> Optional[list[Card_Listing]]:
+    ) -> Optional[list[VendorListing]]:
         product_data = []
         soup = BeautifulSoup(response_text, 'html.parser')
         product_items = soup.find_all('div', class_='productItemWrapper')
 
         for item in product_items:
             name_elem = item.find('span', class_='productDetailTitle').find('a')
-            card_name = name_elem.text.strip()
+            card_name = name_elem.text.strip().split(" (")[0]  # Get the card name before any additional info in parentheses)
             set_info = item.find('div', class_='productDetailSet')
             collector_number = set_info.find('div', class_='collector-number')
             collector_number = collector_number.text.replace('Collector #:', '').strip() if collector_number else "Unknown"
@@ -88,15 +87,13 @@ class CardKingdomAPI(VendorAPI):
 
                 # Get condition grade
                 condition_grade = condition.find('input', {'name': 'style[0]'})['value'] #TODO implement later
-                # print(f"Condition Grade: {condition_grade}")
                 foil_elem = condition.find('input', {'name': 'model'})['value']
                 if foil_elem == 'mtg_foil':
-                    finish = Card_Spec.Finish.FOIL
+                    finish = CardSpec.Finish.FOIL
                 elif foil_elem == 'mtg_card':
-                    finish = Card_Spec.Finish.NON_FOIL
+                    finish = CardSpec.Finish.NON_FOIL
                 else:
-                    finish = Card_Spec.Finish.UNSPECIFIED
-                # print(foil_elem)
+                    finish = CardSpec.Finish.UNSPECIFIED
                 
                 
                 # Get price and quantity
@@ -107,7 +104,9 @@ class CardKingdomAPI(VendorAPI):
                     quantity = int(quantity_elem.text.strip())
 
                     if card_name.lower() == search_card_name.lower():
-                        card_spec = Card_Spec(
+                        # TODO fix time spiral reprint of endurance not making it past the filter due to mismatched set ID but matching number.
+                        # print(f"Found card: {card_name}, Edition: {edition_code}, Collector Number: {collector_number}, Price: {price}, Quantity: {quantity}, Finish: {finish}")
+                        card_spec = CardSpec(
                             name=card_name,
                             edition_code=edition_code,
                             card_number=collector_number,
@@ -115,7 +114,7 @@ class CardKingdomAPI(VendorAPI):
                             language="English"
                         )
                         
-                        listing = Card_Listing(
+                        listing = VendorListing(
                             card_spec=card_spec,
                             store="Card Kingdom",
                             price=price,
@@ -126,11 +125,13 @@ class CardKingdomAPI(VendorAPI):
                             link=f"https://www.cardkingdom.com{name_elem.get('href', '')}"
                         )
                         product_data.append(listing)
+                    else:
+                        pass
         # print(product_data)
         return product_data
 
     @staticmethod
-    def search_card(card_name: str) -> Optional[List[Card_Listing]]:#TODO think about where it needs to be async
+    def search_card_name(card_name: str) -> Optional[List[VendorListing]]:#TODO think about where it needs to be async
         # search_url = f"{CardKingdomAPI.BASE_URL}{CardKingdomAPI.SEARCH_SUFFIX_NF}{encoded_name}{CardKingdomAPI.URL_SUFFIX}"
 
         try: 
@@ -142,5 +143,5 @@ class CardKingdomAPI(VendorAPI):
             return listings
 
         except (requests.RequestException, json.JSONDecodeError, ValueError) as e:
-            print(f"Error searching MTGMate for card {card_name}: {e}")
+            print(f"Error searching Card Kingdom for card {card_name}: {e}")
             return None

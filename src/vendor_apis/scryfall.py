@@ -7,7 +7,7 @@ class ScryfallAPI:
     
 
     @staticmethod
-    def search_card(card_name: str) -> Optional[dict]:
+    def search_card_name(card_name: str) -> Optional[dict]:
         """
         Search for a card by name using Scryfall API
         """
