@@ -5,6 +5,8 @@ from typing import Optional, List
 import urllib.parse
 from card import CardSpec, VendorListing
 from vendor_api import VendorAPI
+from cachier import cachier
+import datetime
 
 class CardKingdomAPI(VendorAPI):
     BASE_URL = "https://www.cardkingdom.com/"
@@ -13,6 +15,7 @@ class CardKingdomAPI(VendorAPI):
     URL_SUFFIX = '&search=header'
 
     @staticmethod
+    @cachier(stale_after=datetime.timedelta(days=1), cache_dir='cache/cardkingdom')
     def _get_html(card_name) -> str:
         response = []
         cookies = {

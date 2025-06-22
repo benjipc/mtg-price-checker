@@ -38,6 +38,9 @@ Scripts*
 # Pytest cache
 .pytest_cache/
 
+# Card Vendor API cache results
+cache/
+
 # HTML files (appear to be test or documentation files)
 *.html
 

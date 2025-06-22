@@ -173,8 +173,7 @@ if __name__ == "__main__":
     output_df = main(wishlist_csv_path=input_path)
 
     #handle file output
-    
     output_path = Path(args.output) if args.output else input_path.with_stem(f"{input_path.stem}_results")
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    timestamp = datetime.now().strftime("%Y%m%d_%H")
     output_df.to_csv(output_path.with_stem(f"{output_path.stem}_{timestamp}"), index=False, sep='\t', encoding='utf-8-sig')
     print(f"Results saved to {output_path.with_stem(f"{output_path.stem}_{timestamp}")}")

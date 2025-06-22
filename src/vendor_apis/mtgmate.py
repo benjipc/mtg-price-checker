@@ -5,12 +5,15 @@ from typing import Optional, List
 import urllib.parse
 from card import CardSpec, VendorListing
 from vendor_api import VendorAPI, VendorListingsT
+from cachier import cachier
+import datetime
 
 class MTGMateAPI(VendorAPI):
     BASE_URL = "https://www.mtgmate.com.au"
     SEARCH_SUFFIX = "/cards/search?q="
 
     @staticmethod
+    @cachier(stale_after=datetime.timedelta(days=1), cache_dir='cache/mtgmate')
     def _get_html(search_url: str, headers: dict[str, str]) -> str:
 
         response = requests.get(search_url, headers=headers)

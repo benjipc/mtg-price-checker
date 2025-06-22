@@ -49,9 +49,10 @@ graph TD;
    ```
    cd mtg-price-checker
    ```
-3. Make the venv:
+3. Make and activate the venv:
    ```
-   
+   python -m venv .
+   .\Scripts\activate
    ```
 4. Install the required dependencies:
    ```
